@@ -26,7 +26,7 @@ void StatReader::Read(std::istream& input) {
     }
 }
 
-void StatReader::ProcessQueries(const TransportCatalogue& catalogue) const {
+void StatReader::ProcessQueries(const TransportCatalogue& catalogue, std::ostream& out) const {
     for(const auto& q: queries_) {
         std::string_view sv = q.data;
         trim(sv);
@@ -34,9 +34,9 @@ void StatReader::ProcessQueries(const TransportCatalogue& catalogue) const {
         case BUS: {
             const auto& info = catalogue.GetBusInfo(sv);
             if (info.name == "") {
-                std::cout << "Bus " << sv << ": not found" << std::endl;
+                out << "Bus " << sv << ": not found" << std::endl;
             } else {
-                std::cout << "Bus " << sv << ": " << info.totalStopsCount << " stops on route, "
+                out << "Bus " << sv << ": " << info.totalStopsCount << " stops on route, "
                         << info.uniqueStopsCount << " unique stops, " << info.routeLength
                         << " route length, " << std::setprecision(6) << info.curvature
                         << " curvature" << std::endl;
@@ -46,17 +46,17 @@ void StatReader::ProcessQueries(const TransportCatalogue& catalogue) const {
         case STOP: {
             const auto& stop_to_buses = catalogue.GetStopToBuses();
             if (stop_to_buses.count(sv) == 0) {
-                std::cout << "Stop " << sv << ": not found" << std::endl;
+                out << "Stop " << sv << ": not found" << std::endl;
             } else if (stop_to_buses.at(sv).size() == 0) {
-                std::cout << "Stop " << sv << ": no buses" << std::endl;
+                out << "Stop " << sv << ": no buses" << std::endl;
             } else {
                 std::vector<std::string_view> stops(stop_to_buses.at(sv).begin(), stop_to_buses.at(sv).end());
                 std::sort(stops.begin(), stops.end());
-                std::cout << "Stop " << sv << ": buses";
+                out << "Stop " << sv << ": buses";
                 for (const auto& stop: stops) {
-                    std::cout << " " << stop;
+                    out << " " << stop;
                 }
-                std::cout << std::endl;
+                out << std::endl;
             }
             break;
         }

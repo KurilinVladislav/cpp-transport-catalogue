@@ -16,7 +16,7 @@ public:
 
     void Read(std::istream& input);
 
-    void ProcessQueries(const TransportCatalogue& catalogue) const;
+    void ProcessQueries(const TransportCatalogue& catalogue, std::ostream& out = std::cout) const;
 
 private:
     enum QueryType {

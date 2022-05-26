@@ -59,6 +59,7 @@ private:
     std::unordered_map<std::string_view, std::unordered_set<std::string_view>> stop_to_buses_;
     std::unordered_map<std::pair<const Stop*, const Stop*>, int, StopHasher> distances_;
     std::unordered_map<std::pair<const Stop*, const Stop*>, double, StopHasher> geo_distances_;
+    std::unordered_map<std::string_view, std::pair<int, double>> busname_to_total_distances_;
 
 };
 

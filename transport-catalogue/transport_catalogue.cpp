@@ -18,14 +18,19 @@ void TransportCatalogue::AddBus(std::string_view name, std::vector<std::string_v
         stop_ptrs.push_back(FindStop(sv));
         stop_to_buses_[sv].insert(name);
     }
+    int total_distance = 0;
+    double total_geo_distance = 0.0;
     for(size_t i = 1; i < stop_ptrs.size(); ++i) {
         double distance = ComputeDistance(stop_ptrs[i-1]->coordinates, stop_ptrs[i]->coordinates);
         std::pair<const Stop*, const Stop*> pair;
         pair.first = stop_ptrs[i-1];
         pair.second = stop_ptrs[i];
         geo_distances_[pair] = distance;
+        total_distance += GetDistance(stop_ptrs[i-1], stop_ptrs[i]);
+        total_geo_distance += distance;
     }
     buses_.push_back({static_cast<std::string>(name), stop_ptrs});
+    busname_to_total_distances_[name] = {total_distance, total_geo_distance};
     busname_to_bus_[name] = &buses_.back();
 }
     
@@ -68,12 +73,8 @@ const TransportCatalogue::BusInfo TransportCatalogue::GetBusInfo(std::string_vie
         std::unordered_set<const Stop*> unique_stops(bus_ptr->stops.begin(), bus_ptr->stops.end());
         info.uniqueStopsCount = unique_stops.size();
         info.totalStopsCount = bus_ptr->stops.size();
-        int total_distance = 0;
-        double total_geo_distance = 0.0;
-        for(size_t i = 1; i < bus_ptr->stops.size(); ++i) {
-            total_distance += GetDistance(bus_ptr->stops[i-1], bus_ptr->stops[i]);
-            total_geo_distance += geo_distances_.at({bus_ptr->stops[i-1], bus_ptr->stops[i]});
-        }
+        int total_distance = busname_to_total_distances_.at(name).first;
+        double total_geo_distance = busname_to_total_distances_.at(name).second;
         info.routeLength = total_distance;
         info.curvature = (1.0f * total_distance) / total_geo_distance;
     }
