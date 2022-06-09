@@ -1,19 +1,15 @@
-#include "transport_catalogue.h"
-#include "input_reader.h"
-#include "stat_reader.h"
+#include "json_reader.h"
+
 
 int main() {
-
-    transport::input::InputReader reader;
-    reader.Read(std::cin);
-
-    transport::TransportCatalogue catalogue;
-    catalogue.FillInfo(reader);
-
-    transport::stat::StatReader stat_reader;
-    stat_reader.Read(std::cin);
     
-    stat_reader.ProcessQueries(catalogue);
-
-    return 0;
+    transport::TransportCatalogue catalogue;
+    transport::renderer::MapRenderer renderer;
+    transport::RequestHandler handler(catalogue, renderer);
+    transport::io::JsonReader reader(catalogue, handler, renderer);
+    reader.ReadJsonFromStream(std::cin);
+    reader.FillDB();
+    reader.ProcessAndApplyRenderSettings();
+    reader.ProcessStatRequests(std::cout);
+    
 }
