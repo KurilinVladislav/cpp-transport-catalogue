@@ -183,7 +183,7 @@ void Text::RenderObject(const RenderContext& context) const {
     auto end = sv.find_last_not_of(' ');
     if (begin != std::string_view::npos) {
         sv = sv.substr(begin, end - begin + 1);
-        bool was_whitespace = false;
+        //bool was_whitespace = false;
         for(const char& c: sv) {
             if (c == '\"') {
                 out << "&quot;"sv;
@@ -204,15 +204,15 @@ void Text::RenderObject(const RenderContext& context) const {
             if (c == '&') {
                 out << "&amp;"sv;
                 continue;
-            }
-            if (c == ' ') {
-                if (was_whitespace == false) {
-                    out << c;
-                }
-                was_whitespace = true;
+            //}
+            //if (c == ' ') {
+            //    if (was_whitespace == false) {
+            //        out << c;
+            //    }
+            //    was_whitespace = true;
             } else {
                 out << c;
-                was_whitespace = false;
+            //    was_whitespace = false;
             }
         }
     }
