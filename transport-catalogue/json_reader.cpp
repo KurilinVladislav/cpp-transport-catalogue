@@ -7,8 +7,8 @@
 namespace transport {
 namespace io {
     
-JsonReader::JsonReader(TransportCatalogue& db, const RequestHandler& handler, renderer::MapRenderer& renderer)
-    : db_(db), handler_(handler), renderer_(renderer) {
+JsonReader::JsonReader(TransportCatalogue& db, const RequestHandler& handler, renderer::MapRenderer& renderer, TransportRouter& router)
+    : db_(db), handler_(handler), renderer_(renderer), router_(router) {
 }
 
 void JsonReader::ReadJsonFromStream(std::istream& input) {
@@ -91,6 +91,16 @@ void JsonReader::ProcessAndApplyRenderSettings() {
         underlayer_color, underlayer_width, color_palette
     });
 }
+    
+void JsonReader::ProcessAndApplyRouterSettings() {
+    if (requests_.GetRoot().AsDict().count("routing_settings") == 0) {
+        return;
+    }
+    auto& s = requests_.GetRoot().AsDict().at("routing_settings").AsDict();
+    size_t bus_wait_time = s.at("bus_wait_time").AsInt();
+    double bus_velocity = s.at("bus_velocity").AsDouble();
+    router_.ApplySettings({bus_wait_time, bus_velocity});
+}
 
 void JsonReader::ProcessStatRequests(std::ostream& output) {
     if (requests_.GetRoot().AsDict().count("stat_requests") == 0) {
@@ -102,8 +112,10 @@ void JsonReader::ProcessStatRequests(std::ostream& output) {
             result.emplace_back(std::move(json::Node{ProcessStopInfoRequest(request.AsDict())}));
         } else if (request.AsDict().at("type").AsString() == "Bus") {
             result.emplace_back(std::move(json::Node{ProcessBusInfoRequest(request.AsDict())}));
-        } else {
+        } else if (request.AsDict().at("type").AsString() == "Map") {
             result.emplace_back(std::move(json::Node{ProcessMapRequest(request.AsDict())}));
+        } else /*if (request_.AsDict().at("type").AsString() == "Route")*/ {
+            result.emplace_back(std::move(json::Node{ProcessRouteRequest(request.AsDict())}));
         }
     }
     json::Print(json::Document{result}, output);
@@ -194,6 +206,41 @@ json::Dict JsonReader::ProcessMapRequest(const json::Dict& request) const {
         .Key("request_id").Value(id)
         .Key("map").Value(out.str())
     .EndDict().Build().AsDict();
+}
+    
+json::Dict JsonReader::ProcessRouteRequest(const json::Dict& request) const {
+    int id = request.at("id").AsInt();
+    auto res = router_.BuildRoute(request.at("from").AsString(), request.at("to").AsString());
+    if (res) {
+        // unpack result; if there are no items, out items = [] and time = 0
+        json::Array items;
+        for(size_t edge_id: res->edges) {
+            const auto& edge = router_.GetEdge(edge_id);
+            items.emplace_back(std::move(json::Builder{}.StartDict()
+                                        .Key("type").Value("Wait")
+                                        .Key("stop_name").Value(db_.GetStopById(edge.from)->name)
+                                        .Key("time").Value(router_.GetBusWaitTime())
+                                        .EndDict().Build().AsDict()));
+            items.emplace_back(std::move(json::Builder{}.StartDict()
+                                        .Key("type").Value("Bus")
+                                        .Key("bus").Value(std::string(edge.bus_name))
+                                        .Key("span_count").Value(static_cast<int>(edge.stop_count))
+                                        .Key("time").Value(edge.weight - router_.GetBusWaitTime())
+                                        .EndDict().Build().AsDict()));
+        }
+        
+        return json::Builder{}.StartDict()
+            .Key("request_id").Value(id)
+            .Key("total_time").Value(res->weight)
+            .Key("items").Value(items)
+            .EndDict().Build().AsDict();
+    } else {
+        return json::Builder{}
+            .StartDict()
+                .Key("request_id").Value(id)
+                .Key("error_message").Value("not found")
+            .EndDict().Build().AsDict();
+    }
 }
     
 svg::Color JsonReader::GetColorFromJsonNode(const json::Node& node) const {
