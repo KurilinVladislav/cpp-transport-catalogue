@@ -39,7 +39,7 @@ public:
     const Edge<Weight>& GetEdge(EdgeId edge_id) const;
     IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
 
-    router_serialize::Graph SerGraph() const;
+    router_serialize::Graph SerializeGraph() const;
 
 private:
     std::vector<Edge<Weight>> edges_;
@@ -101,7 +101,7 @@ DirectedWeightedGraph<Weight>::GetIncidentEdges(VertexId vertex) const {
 }
 
 template<typename Weight>
-router_serialize::Graph DirectedWeightedGraph<Weight>::SerGraph() const {
+router_serialize::Graph DirectedWeightedGraph<Weight>::SerializeGraph() const {
     router_serialize::Graph g;
 
     for(size_t i = 0; i < incidence_lists_.size(); ++i) {

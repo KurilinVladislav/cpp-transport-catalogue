@@ -32,7 +32,7 @@ public:
 
     std::optional<RouteInfo> BuildRoute(VertexId from, VertexId to) const;
 
-    router_serialize::RoutesInternalData SerRoutesInternalData() const;
+    router_serialize::RoutesInternalData SerializeRoutesInternalData() const;
     const Graph& GetGraph() const;
 
 private:
@@ -148,7 +148,7 @@ std::optional<typename Router<Weight>::RouteInfo> Router<Weight>::BuildRoute(Ver
 }
 
 template<typename Weight>
-router_serialize::RoutesInternalData Router<Weight>::SerRoutesInternalData() const {
+router_serialize::RoutesInternalData Router<Weight>::SerializeRoutesInternalData() const {
     router_serialize::RoutesInternalData d;
     for (size_t i = 0; i < routes_internal_data_.size(); ++i) {
         router_serialize::VectorOpt vector_opt;
