@@ -52,6 +52,7 @@ class MapRenderer {
 public:
     MapRenderer() = default;
     void ApplySettings(const RenderSettings& settings);
+    const RenderSettings& GetSettings() const;
     svg::Document RenderMap(const std::vector<const Bus*>& buses) const;
 private:
     void RenderBuses(const std::vector<const Bus*>& buses, svg::Document& doc, const SphereProjector& projector) const;

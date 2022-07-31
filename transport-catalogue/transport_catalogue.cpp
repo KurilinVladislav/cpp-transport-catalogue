@@ -2,6 +2,8 @@
 
 #include <unordered_set>
 
+#include <iostream>
+
 namespace transport {
 
 void TransportCatalogue::AddStop(std::string_view stopname, geo::Coordinates coordinates) {
@@ -16,7 +18,8 @@ void TransportCatalogue::AddStop(std::string_view stopname, geo::Coordinates coo
 }
 
 void TransportCatalogue::AddBus(std::string_view busname, std::vector<std::string_view>& stops, bool looped) {
-    buses_.push_back({static_cast<std::string>(busname), {}, looped});
+    size_t id = buses_.size();
+    buses_.push_back({id, static_cast<std::string>(busname), {}, looped});
     std::string_view name = buses_.back().name;
     busname_to_bus_[name] = &buses_.back();
     std::vector<const Stop*> stop_ptrs;
@@ -25,6 +28,7 @@ void TransportCatalogue::AddBus(std::string_view busname, std::vector<std::strin
         stop_to_buses_[sv].insert(name);
     }
     buses_.back().stops = stop_ptrs;
+    bus_id_to_bus_[id] = &buses_.back();
     
     int total_distance = 0;
     double total_geo_distance = 0.0;
@@ -67,7 +71,11 @@ double TransportCatalogue::GetGeoDistance(const Stop* from, const Stop* to) cons
 }
 
 const Stop* TransportCatalogue::FindStop(std::string_view name) const {
-    return stopname_to_stop_.at(name);
+    if (stopname_to_stop_.count(name) != 0) {
+        return stopname_to_stop_.at(name);
+    } else {
+        return nullptr;
+    }
 }
     
 const Stop* TransportCatalogue::GetStopById(size_t id) const {
@@ -81,6 +89,14 @@ const Stop* TransportCatalogue::GetStopById(size_t id) const {
 const Bus* TransportCatalogue::FindBus(std::string_view name) const {
     if (busname_to_bus_.count(name) != 0) {
         return busname_to_bus_.at(name);
+    } else {
+        return nullptr;
+    }
+}
+
+const Bus* TransportCatalogue::GetBusById(size_t id) const {
+    if (bus_id_to_bus_.count(id) != 0) {
+        return bus_id_to_bus_.at(id);
     } else {
         return nullptr;
     }
@@ -114,5 +130,81 @@ const std::deque<Bus>& TransportCatalogue::GetBuses() const {
     return buses_;
 }
 
+void TransportCatalogue::LoadData(const CatalogueSaveData& data) {
+    // load data from struct
+    stops_ = std::move(data.stops);
+    for (const Stop& s : stops_) {
+        stopname_to_stop_[s.name] = &s;
+        stop_id_to_stop_[s.id] = &s;
+    }
+    for (const CatalogueSaveData::Bus& b : data.buses) {
+        buses_.push_back({b.id, b.name, {}, b.is_roundtrip});
+        for(size_t id: b.stop_ids) {
+            buses_.back().stops.push_back(GetStopById(id));
+        }
+    }
+    for (const Bus& b : buses_) {
+        busname_to_bus_[b.name] = &b;
+        bus_id_to_bus_[b.id] = &b;
+    }
+    for (const CatalogueSaveData::StopToBuses& s : data.stop_to_buses) {
+        for (size_t bus_id : s.bus_ids) {
+            stop_to_buses_[GetStopById(s.id)->name].insert(GetBusById(bus_id)->name);
+        }
+    }
+    for (const CatalogueSaveData::Distance& d : data.distances) {
+        std::pair<const Stop*, const Stop*> p{GetStopById(d.from), GetStopById(d.to)};
+        distances_[p] = d.distance;
+    }
+    for (const CatalogueSaveData::GeoDistance& d : data.geo_distances) {
+        std::pair<const Stop*, const Stop*> p{GetStopById(d.from), GetStopById(d.to)};
+        geo_distances_[p] = d.distance;
+    }
+    for (const CatalogueSaveData::BusToTotal& d : data.bus_id_to_total_distances) {
+        busname_to_total_distances_[GetBusById(d.id)->name] = {d.distance, d.geo_distance};
+    }
+}
+
+CatalogueSaveData TransportCatalogue::SaveData() const {
+    CatalogueSaveData r;
+    r.stops = {}; // serializer gets this straight from db_
+
+    for (const Bus& bus: buses_) {
+        std::vector<size_t> ids;
+        for (const Stop* s: bus.stops) {
+            ids.push_back(s->id);
+        }
+        CatalogueSaveData::Bus b{bus.id, bus.name, ids, bus.is_roundtrip};
+        r.buses.push_back(std::move(b));
+    }
+    for (const auto& [name, bus_names]: stop_to_buses_) {
+        size_t id = FindStop(name)->id;
+        std::vector<size_t> bus_ids;
+        for (const auto& n : bus_names) {
+            bus_ids.push_back(FindBus(n)->id);
+        }
+        CatalogueSaveData::StopToBuses s{id, bus_ids};
+        r.stop_to_buses.push_back(std::move(s));
+    }
+    for (const auto& [stop_pair, dist]: distances_) {
+        size_t from = stop_pair.first->id;
+        size_t to = stop_pair.second->id;
+        CatalogueSaveData::Distance d{from, to, dist};
+        r.distances.push_back(std::move(d));
+    }
+    for (const auto& [stop_pair, dist]: geo_distances_) {
+        size_t from = stop_pair.first->id;
+        size_t to = stop_pair.second->id;
+        CatalogueSaveData::GeoDistance d{from, to, dist};
+        r.geo_distances.push_back(std::move(d));
+    }
+    for (const auto& [name, pair_dist]: busname_to_total_distances_) {
+        size_t id = FindBus(name)->id;
+        CatalogueSaveData::BusToTotal d{id, pair_dist.first, pair_dist.second};
+        r.bus_id_to_total_distances.push_back(std::move(d));
+    }
+
+    return r;
+}
 
 } // end namespace transport

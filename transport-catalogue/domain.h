@@ -15,6 +15,7 @@ struct Stop {
 };
 
 struct Bus {
+    size_t id;
     std::string name;
     std::vector<const Stop*> stops; // all stops, including way back
     bool is_roundtrip;

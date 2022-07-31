@@ -102,6 +102,18 @@ void JsonReader::ProcessAndApplyRouterSettings() {
     router_.ApplySettings({bus_wait_time, bus_velocity});
 }
 
+json::Dict JsonReader::ProcessSerializationSettings() const {
+    if (requests_.GetRoot().AsDict().count("serialization_settings") == 0) {
+        return json::Builder{}.StartDict().Key("file").Value("").EndDict().Build().AsDict();
+    }
+    const auto& s = requests_.GetRoot().AsDict().at("serialization_settings").AsDict();
+    std::string file = s.at("file").AsString();
+    return json::Builder{}
+            .StartDict()
+                .Key("file").Value(file)
+            .EndDict().Build().AsDict();
+}
+
 void JsonReader::ProcessStatRequests(std::ostream& output) {
     if (requests_.GetRoot().AsDict().count("stat_requests") == 0) {
         return;
@@ -127,20 +139,26 @@ json::Dict JsonReader::ProcessStopInfoRequest(const json::Dict& request) const {
     if (request.at("name").IsString() == true) {
         name = request.at("name").AsString();
     }
-    if (name == "") {
-        return json::Builder{}
+    //if (name == "") {
+        /*return json::Builder{}
+            .StartDict()
+                .Key("request_id").Value(id)
+                .Key("buses").Value(json::Array{})  //.StartArray().EndArray()
+            .EndDict().Build().AsDict();*/
+        /*return json::Builder{}
         .StartDict()
             .Key("request_id").Value(id)
             .Key("error_message").Value("not found")
-        .EndDict().Build().AsDict();
-    }
+        .EndDict().Build().AsDict();*/
+    //}
     auto res = handler_.GetBusesByStop(name);
     if (res) {
         if (res->size() == 0) {
+            json::Array empty{};
             return json::Builder{}
             .StartDict()
                 .Key("request_id").Value(id)
-                .Key("buses").StartArray().EndArray()  // .Value(json::Array{})
+                .Key("buses").StartArray().EndArray() // Value(json::Array{})
             .EndDict().Build().AsDict();
         }
         std::vector<std::string_view> sorted_buses(res->begin(), res->end());
@@ -221,9 +239,10 @@ json::Dict JsonReader::ProcessRouteRequest(const json::Dict& request) const {
                                         .Key("stop_name").Value(db_.GetStopById(edge.from)->name)
                                         .Key("time").Value(router_.GetBusWaitTime())
                                         .EndDict().Build().AsDict()));
+            std::string bus_name = db_.GetBusById(edge.bus_id)->name;
             items.emplace_back(std::move(json::Builder{}.StartDict()
                                         .Key("type").Value("Bus")
-                                        .Key("bus").Value(std::string(edge.bus_name))
+                                        .Key("bus").Value(std::string(bus_name))
                                         .Key("span_count").Value(static_cast<int>(edge.stop_count))
                                         .Key("time").Value(edge.weight - router_.GetBusWaitTime())
                                         .EndDict().Build().AsDict()));

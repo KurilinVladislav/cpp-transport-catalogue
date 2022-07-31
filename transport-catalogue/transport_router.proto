@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package router_serialize;
+
+message InternalData {
+    double weight = 1;
+    repeated uint32 prev_edge = 2;
+}
+
+message OptInternalData {
+    repeated InternalData data = 1;
+}
+
+message VectorOpt {
+    repeated OptInternalData items = 1;
+}
+
+message RoutesInternalData {
+    repeated VectorOpt items = 3;
+}
+
+message RouterSettings {
+    uint32 bus_wait_time = 1;
+    double bus_velocity = 2;
+    RoutesInternalData data = 3;
+}

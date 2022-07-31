@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include <transport_router.pb.h>
+
 namespace graph {
 
 template <typename Weight>
@@ -21,6 +23,7 @@ private:
 
 public:
     explicit Router(const Graph& graph);
+    Router(const Graph& graph, const router_serialize::RoutesInternalData& data);
 
     struct RouteInfo {
         Weight weight;
@@ -28,6 +31,9 @@ public:
     };
 
     std::optional<RouteInfo> BuildRoute(VertexId from, VertexId to) const;
+
+    router_serialize::RoutesInternalData SerRoutesInternalData() const;
+    const Graph& GetGraph() const;
 
 private:
     struct RouteInternalData {
@@ -95,6 +101,33 @@ Router<Weight>::Router(const Graph& graph)
 }
 
 template <typename Weight>
+Router<Weight>::Router(const Graph& graph, const router_serialize::RoutesInternalData& data)
+    : graph_(graph) {
+    // parse here and we're done
+    for(int i = 0; i < data.items_size(); ++i) {
+        std::vector<std::optional<RouteInternalData>> v;
+        for (int j = 0; j < data.items(i).items_size(); ++j) {
+            std::optional<RouteInternalData> opt_i_d;
+            if(data.items(i).items(j).data_size() != 0) {
+                RouteInternalData i_d;
+                const auto& v = data.items(i).items(j).data(0);
+                i_d.weight = v.weight();
+                if (v.prev_edge_size() != 0) {
+                    i_d.prev_edge = v.prev_edge(0);
+                } else {
+                    i_d.prev_edge = std::nullopt;
+                }
+                opt_i_d = i_d;
+            } else {
+                opt_i_d = std::nullopt;
+            }
+            v.push_back(std::move(opt_i_d));
+        }
+        routes_internal_data_.push_back(std::move(v));
+    }
+}
+
+template <typename Weight>
 std::optional<typename Router<Weight>::RouteInfo> Router<Weight>::BuildRoute(VertexId from,
                                                                              VertexId to) const {
     const auto& route_internal_data = routes_internal_data_.at(from).at(to);
@@ -112,6 +145,37 @@ std::optional<typename Router<Weight>::RouteInfo> Router<Weight>::BuildRoute(Ver
     std::reverse(edges.begin(), edges.end());
 
     return RouteInfo{weight, std::move(edges)};
+}
+
+template<typename Weight>
+router_serialize::RoutesInternalData Router<Weight>::SerRoutesInternalData() const {
+    router_serialize::RoutesInternalData d;
+    for (size_t i = 0; i < routes_internal_data_.size(); ++i) {
+        router_serialize::VectorOpt vector_opt;
+        for (size_t j = 0; j < routes_internal_data_.at(i).size(); ++j) {
+            router_serialize::OptInternalData opt_i_d;
+            if (routes_internal_data_.at(i).at(j).has_value()) {
+                const auto& v = *routes_internal_data_.at(i).at(j);
+                router_serialize::InternalData i_d;
+                i_d.set_weight(v.weight);
+                if (v.prev_edge.has_value()) {
+                    i_d.add_prev_edge(*v.prev_edge);
+                }
+                opt_i_d.add_data();
+                *opt_i_d.mutable_data(0) = std::move(i_d);
+            }
+            vector_opt.add_items();
+            *vector_opt.mutable_items((int)j) = std::move(opt_i_d);
+        }
+        d.add_items();
+        *d.mutable_items((int)i) = std::move(vector_opt);
+    }
+    return d;
+}
+
+template<typename Weight>
+const DirectedWeightedGraph<Weight>& Router<Weight>::GetGraph() const {
+    return graph_;
 }
 
 }  // namespace graph

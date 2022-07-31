@@ -19,6 +19,10 @@ svg::Point SphereProjector::operator()(geo::Coordinates coords) const {
 void MapRenderer::ApplySettings(const RenderSettings& settings) {
     render_settings_ = std::move(settings);
 }
+
+const RenderSettings& MapRenderer::GetSettings() const {
+    return render_settings_;
+}
     
 svg::Document MapRenderer::RenderMap(const std::vector<const Bus*>& buses) const {
     std::unordered_set<const Stop*, StopHasher> stops;

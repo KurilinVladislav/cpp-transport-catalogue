@@ -17,11 +17,14 @@ std::optional<BusInfo> RequestHandler::GetBusStat(const std::string_view& bus_na
 
 std::optional<std::unordered_set<std::string_view>> RequestHandler::GetBusesByStop(const std::string_view& stop_name) const {
     const auto& stop_to_buses = db_.GetStopToBuses();
-    if (stop_to_buses.count(stop_name) == 0) {
+    if (!db_.FindStop(stop_name)) {
         return std::nullopt;
-    } else if (stop_to_buses.at(stop_name).size() == 0) {
+    } else if (stop_to_buses.count(stop_name) == 0) {
         return std::unordered_set<std::string_view>{};
     } else {
+        if (stop_to_buses.at(stop_name).size() == 0) {
+            return std::unordered_set<std::string_view>{};
+        }
         return stop_to_buses.at(stop_name);
     }
 }

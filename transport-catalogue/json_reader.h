@@ -20,6 +20,7 @@ public:
     void FillDB();
     void ProcessAndApplyRenderSettings();
     void ProcessAndApplyRouterSettings();
+    json::Dict ProcessSerializationSettings() const;
     void ProcessStatRequests(std::ostream& output);
     
 private:

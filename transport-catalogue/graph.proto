@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package router_serialize;
+
+message Edge {
+    uint32 from = 1;
+    uint32 to = 2;
+    double weight = 3;
+    uint32 bus_id = 4;
+    uint32 stop_count = 5;
+}
+
+message IncidenceList {
+    repeated uint32 edge_ids = 1;
+}
+
+message Graph {
+    repeated Edge edges = 1;
+    repeated IncidenceList incidence_lists = 2;
+}

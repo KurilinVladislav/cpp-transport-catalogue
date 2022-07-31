@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package renderer_serialize;
+
+message Rgb {
+    uint32 r = 1;
+    uint32 g = 2;
+    uint32 b = 3;
+}
+
+message Rgba {
+    uint32 r = 1;
+    uint32 g = 2;
+    uint32 b = 3;
+    double a = 4;
+}
+
+message Point {
+    double x = 1;
+    double y = 2;
+}
+
+message Color {
+    bool is_rgb = 1;
+    bool is_rgba = 2;
+    bool is_string = 3;
+    bool is_none = 4;
+    uint32 r = 5;
+    uint32 g = 6;
+    uint32 b = 7;
+    double a = 8;
+    string str = 9;
+}
