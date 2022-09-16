@@ -21,9 +21,7 @@ void JsonReader::FillDB() {
     }
     const json::Array& base_requests = requests_.GetRoot().AsDict().at("base_requests").AsArray();
     json::Array stop_requests;
-    //stop_requests.reserve(base_requests.size());
     json::Array bus_requests;
-    //bus_requests.reserve(base_requests.size());
     
     for(auto& request: base_requests) {
         if (request.AsDict().at("type").AsString() == "Stop") {
@@ -139,18 +137,6 @@ json::Dict JsonReader::ProcessStopInfoRequest(const json::Dict& request) const {
     if (request.at("name").IsString() == true) {
         name = request.at("name").AsString();
     }
-    //if (name == "") {
-        /*return json::Builder{}
-            .StartDict()
-                .Key("request_id").Value(id)
-                .Key("buses").Value(json::Array{})  //.StartArray().EndArray()
-            .EndDict().Build().AsDict();*/
-        /*return json::Builder{}
-        .StartDict()
-            .Key("request_id").Value(id)
-            .Key("error_message").Value("not found")
-        .EndDict().Build().AsDict();*/
-    //}
     auto res = handler_.GetBusesByStop(name);
     if (res) {
         if (res->size() == 0) {
