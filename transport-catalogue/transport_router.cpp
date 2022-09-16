@@ -78,11 +78,6 @@ void TransportRouter::BuildGraph() {
 }
     
 std::optional<graph::Router<double>::RouteInfo> TransportRouter::BuildRoute(std::string_view from, std::string_view to) {
-    /*if (router_ == nullptr) { // if called for the first time, create graph and router
-        graph_ = std::make_unique<graph::DirectedWeightedGraph<double>>(db_.GetStops().size());
-        BuildGraph();
-        router_ = std::make_unique<graph::Router<double>>(*graph_);
-    }*/
     Init();
     const Stop* from_ptr = db_.FindStop(from);
     const Stop* to_ptr = db_.FindStop(to);
