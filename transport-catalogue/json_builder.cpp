@@ -21,35 +21,6 @@ KeyContext Builder::Key(const std::string& s) {
     nodes_stack_.emplace_back(&(const_cast<Dict&>(nodes_stack_.back()->AsDict())[std::move(s)]));
     return {*this};
 }
-
-    /*
-BuildContext& Builder::Value(Node::Value v) {
-    CheckComplete();
-    if (nodes_stack_.back() == nullptr) {
-        const_cast<Node::Value&>(root_.GetValue()) = std::move(v);
-        nodes_stack_.pop_back();
-    } else if (nodes_stack_.back()->IsDict() && !std::holds_alternative<Dict>(v)) {
-        throw std::logic_error("Value must be after ctor, key or array element");
-    } else if (nodes_stack_.back()->IsArray()) {
-        Node tmp;
-        const_cast<Node::Value&>(tmp.GetValue()) = std::move(v);
-        const_cast<Array&>(nodes_stack_.back()->AsArray()).emplace_back(std::move(tmp));
-    } else {
-        const_cast<Node::Value&>((*nodes_stack_.back()).GetValue()) = std::move(v);
-        nodes_stack_.pop_back();
-    }
-    if (nodes_stack_.size() == 0) {
-        complete = true;
-    }
-    if (nodes_stack_.size() > 0) {  // Как тут возвращать разные контексты?
-        if (nodes_stack_.back()->IsDict()) {
-            return dynamic_cast<ValueAfterKeyContext&>(*this);
-        } else if (nodes_stack_.back()->IsArray()) {
-            return dynamic_cast<ValueAfterStartArrayContext&>(*this);
-        }
-    }
-    return dynamic_cast<ValueBuildContext&>(*this);
-}*/
     
 ValueBuildContext Builder::Value(Node::Value v) {
     CheckComplete();
