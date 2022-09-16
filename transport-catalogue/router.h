@@ -103,7 +103,6 @@ Router<Weight>::Router(const Graph& graph)
 template <typename Weight>
 Router<Weight>::Router(const Graph& graph, const router_serialize::RoutesInternalData& data)
     : graph_(graph) {
-    // parse here and we're done
     for(int i = 0; i < data.items_size(); ++i) {
         std::vector<std::optional<RouteInternalData>> v;
         for (int j = 0; j < data.items(i).items_size(); ++j) {
