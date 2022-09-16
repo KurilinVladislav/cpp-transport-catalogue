@@ -21,15 +21,7 @@ std::ostream& ColorPrinter::operator()(Rgb val) const {
 }
     
 std::ostream& ColorPrinter::operator()(Rgba val) const {
-    //std::ios init(NULL);
-    //init.copyfmt(out);
     out << "rgba("sv << static_cast<uint16_t>(val.red) << ","sv << static_cast<uint16_t>(val.green) << ","sv << static_cast<uint16_t>(val.blue) << "," << val.opacity << ")"sv;
-    
-    //out << std::fixed;
-    //out.width(3);
-    //out.precision(1);
-    
-    //out.copyfmt(init);
     return out;
 }
     
@@ -183,7 +175,6 @@ void Text::RenderObject(const RenderContext& context) const {
     auto end = sv.find_last_not_of(' ');
     if (begin != std::string_view::npos) {
         sv = sv.substr(begin, end - begin + 1);
-        //bool was_whitespace = false;
         for(const char& c: sv) {
             if (c == '\"') {
                 out << "&quot;"sv;
@@ -204,15 +195,8 @@ void Text::RenderObject(const RenderContext& context) const {
             if (c == '&') {
                 out << "&amp;"sv;
                 continue;
-            //}
-            //if (c == ' ') {
-            //    if (was_whitespace == false) {
-            //        out << c;
-            //    }
-            //    was_whitespace = true;
             } else {
                 out << c;
-            //    was_whitespace = false;
             }
         }
     }
